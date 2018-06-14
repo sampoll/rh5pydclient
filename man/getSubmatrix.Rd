@@ -18,6 +18,6 @@ each integer-valued.  (R-conventions)}
 Fetch data from \code{Dataset} object
 }
 \examples{
-A <- getSubmatrix(conn, D, c('1:10:1', '1:10:3'))
+A <- getSubmatrix(conn, D, c('200:300:1', '400:500:1'))
 
 }
