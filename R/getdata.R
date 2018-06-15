@@ -1,3 +1,18 @@
+
+`[.h5pyd._hl.files.File` <- function(obj, x)  {
+     y <- obj$`__getitem__`(x)
+}
+
+`[.h5pyd._hl.group.Group` <- function(obj, x)  {
+     y <- obj$`__getitem__`(x)
+}
+
+`[.h5pyd._hl.dataset.Dataset` <- function(obj, x)  {
+     y <- obj$`__getitem__`(x)
+}
+
+
+
 #' initPython
 #'
 #' Initialize access to \code{reticulate} package and check
