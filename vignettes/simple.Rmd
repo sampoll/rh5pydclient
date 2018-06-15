@@ -1,0 +1,57 @@
+---
+title: "simple.Rmd"
+author: "Sam"
+date: "6/15/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Package
+
+\code{rh5pydclient} is a R wrapper for the python package \code{h5pyd}. 
+
+```{r}
+library(rh5pydclient)
+```
+
+### Initialization
+
+The user must have a python executable, the R package \code{reticulate} and the python package \code{h5pyd} installed. The \code{initPython} initializes access to python and checks that \code{h5pyd} is installed. The user can set the path to the preferred python executable. By default, \code{reticulate} will search for a python executable to use.
+
+```{r}
+initPython()
+```
+
+### Connect to the server
+
+Connect to a \code{h5serv} or \code{hsds} server and identify a H5 file to open.
+
+```{r}
+conn <- initConn(domain='/home/stvjc/tenx_full.h5', endpoint='http://52.4.181.237:5101')
+```
+
+### Open a dataset
+
+Obtain a handle to a dataset.
+
+```{r}
+D <- getDataset(conn, 'newassay001')
+```
+
+### Download data
+
+At present, the only way to signify the submatrix to fetch is to pass slices as constant 
+R strings in the format \code{start:stop:step}. The indices should be in R convention, i.e.,
+the first array subscript is 1 (not 0) and if \code{stop-start} is a multiple of \code{step}, 
+the index \code{stop} is included in the slice.
+
+```{r}
+A <- getSubmatrix(conn, D, c('200:300:1', '400:500:1'))
+sum(A)    # should be 2000
+```
+
+
+
