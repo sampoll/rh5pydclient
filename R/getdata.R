@@ -132,5 +132,5 @@ getSubmatrix <- function(conn, dset, indices)  {
 
   t <- tuple(slices)    # note: reticulate::tuple not builtins$tuple
   npdata <- dset[t]     
-  data <- py_to_r(npdata)
+  py_to_r(npdata)
 }
