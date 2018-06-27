@@ -8,12 +8,16 @@ library(rh5pydclient)
 initPython()
 
 ## ------------------------------------------------------------------------
-conn <- initConn(domain='/home/stvjc/tenx_full.h5', mode='r', endpoint='http://52.4.181.237:5101')
+endpoint = 'http://54.224.146.67:5000'
+domain = 'tinyfile.public.gliobulk.org'
+conn <- initConn(domain=domain, mode='r+', endpoint=endpoint)
 
 ## ------------------------------------------------------------------------
-D <- getDataset(conn, 'newassay001')
+D <- getDataset(conn, 'tinyds')
 
 ## ------------------------------------------------------------------------
-A <- getSubmatrix(D, c('200:300:1', '400:600:1'))
-sum(A)    # should be 2848
+A <- array(c(4, 14, 7, 17, 5, 15, 9, 19), dim=c(2, 2, 2))
+setSubmatrix(D, c('7:8:1', '11:12:1', '11:12:1'), A)
+# check
+getSubmatrix(D, c('7:8:1', '11:12:1', '11:12:1'))
 

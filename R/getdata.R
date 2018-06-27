@@ -1,16 +1,24 @@
 
+#' @export
 `[.h5pyd._hl.files.File` <- function(obj, x)  {
      y <- obj$`__getitem__`(x)
 }
 
+#' @export
 `[.h5pyd._hl.group.Group` <- function(obj, x)  {
      y <- obj$`__getitem__`(x)
 }
 
+#' @export
 `[.h5pyd._hl.dataset.Dataset` <- function(obj, x)  {
      y <- obj$`__getitem__`(x)
 }
 
+
+#' @export
+`[<-.h5pyd._hl.dataset.Dataset` <- function(obj, x, value)  {
+     obj$`__setitem__`(x, value)
+}
 
 
 #' initPython
@@ -49,21 +57,22 @@ initPython = function(path='')  {
 #' Initialize connection to h5pyd server
 #'
 #' @param domain H5File domain (see documentation)
+#' @param mode File mode ('r' for read-only, 'r+' for read-write, 'w' for write) 
+#' Note: 'w' obliterates everything in the file
 #' @param endpoint endpoint
 #' @return object of type \code{h5pyd_connection}
 #' 
 #' @examples
-#' conn <- initConn(domain='/home/stvjc/tenx_full.h5', endpoint='http://52.4.181.237:5101') 
+#' conn <- initConn(domain='/home/stvjc/tenx_full.h5', mode='r', endpoint='http://52.4.181.237:5101') 
 #' 
 #' @importFrom reticulate import 
 #' @importFrom reticulate import_builtins
 #' @export
-initConn <- function(domain, endpoint)  {
+initConn <- function(domain, mode = 'r', endpoint)  {
   h5py <- import("h5pyd", convert = FALSE)
   np <- import("numpy", convert = FALSE)
-  builtins <- import_builtins()
-  h5file <- h5py$File(domain, 'r', endpoint=endpoint)  # TODO: check for not-found
-  return(list(h5py=h5py, np=np, builtins=builtins, h5file=h5file))
+  h5file <- h5py$File(domain, mode, endpoint=endpoint)  # TODO: check for not-found
+  return(list(h5py=h5py, np=np, h5file=h5file))
 }
 
 #' getDataset
@@ -86,51 +95,96 @@ getDataset <- function(conn, path)  {
 #'
 #' Fetch data from \code{Dataset} object
 #'
-#' @param conn Object of type \code{h5pyd_connection} (from \code{initConn})
 #' @param dset Object of type \code{Dataset}
 #' @param indices Character vector of slices. Must be in format 'start:stop:step' 
 #' each integer-valued.  (R-conventions)
 #'
 #' @examples
-#' A <- getSubmatrix(conn, D, c('200:300:1', '400:500:1'))
+#' A <- getSubmatrix(D, c('200:300:1', '400:500:1'))
 #'
 #' @importFrom reticulate py_to_r
 #' @importFrom reticulate tuple
+#' @importFrom reticulate import 
+#' @importFrom reticulate import_builtins
 #' @export
-getSubmatrix <- function(conn, dset, indices)  {
+getSubmatrix <- function(dset, indices)  {
   sh <- py_to_r(dset$shape)
   if (length(sh) != length(indices))  {
     warn(paste0("invalid number of indices ",len(sh), " != ", len(indices)))
     return(NULL)
   }
-    
-  builtins <- conn$builtins
-  isok <- TRUE
+
   slices <- c()
-
   for (i in 1:length(indices))  {
-    s <- as.integer(strsplit(indices[i], ':')[[1]])
-    if (length(s) != 3) {
-      warn(paste0("slice syntax error"))
-      return(NULL)
-    } 
-
-    # convert slice to Python conventions
-    start <- s[1]-1     # Python: arrays start at 0
-    stop <- s[2]-1      # Python: arrays start at 0
-    step <- s[3] 
-
-    # Python: if (stop - start) is a multiple of step, the 
-    # last value is not included in the slice
-
-    if ((stop-start)/step == round((stop-start)/step))  
-      stop = stop+1
- 
-    sl <- builtins$slice(as.integer(start), as.integer(stop), as.integer(step))
+    sl <- ind2slc(indices[i])
     slices <- c(slices, sl)
   }
 
   t <- tuple(slices)    # note: reticulate::tuple not builtins$tuple
   npdata <- dset[t]     
   py_to_r(npdata)
+}
+
+#' setSubmatrix
+#'
+#' Store data to \code{Dataset} object
+#'
+#' @param dset Object of type \code{Dataset}
+#' @param indices Character vector of slices. Must be in format 'start:stop:step' 
+#' @param mm R array of data to store
+#' each integer-valued.  (R-conventions)
+#'
+#' @examples
+#' setSubmatrix(D, c('1:2:1', '1:2:1', '1:2:1'), array(c(4, 14, 7, 17, 5, 15, 9, 19), dim=c(2, 2, 2)))
+#'
+#' @importFrom reticulate py_to_r
+#' @importFrom reticulate tuple
+#' @importFrom reticulate import 
+#' @export
+setSubmatrix <- function(dset, indices, mm)  {
+  sh <- py_to_r(dset$shape)
+  if (length(sh) != length(indices))  {
+    warn(paste0("invalid number of indices ",len(sh), " != ", len(indices)))
+    return(NULL)
+  }
+
+  slices <- c()
+  for (i in 1:length(indices))  {
+    sl <- ind2slc(indices[i])
+    slices <- c(slices, sl)
+  }
+
+  # TODO: Check dimensions of slices and mm are compatible
+
+  np <- import("numpy", convert = FALSE)
+
+  t <- tuple(slices)    # note: reticulate::tuple not builtins$tuple
+  dt <- py_to_r(dset$dtype$name)          # numpy datatype
+  npdata <- np$array(mm, dtype=dt)
+  dset[t] <- npdata    
+
+}
+
+# Private utility function for converting index string of form '1:10:2' 
+# into a python slice object
+ind2slc <- function(indstr)  {
+  builtins <- import_builtins()
+  s <- as.integer(strsplit(indstr, ':')[[1]])
+  if (length(s) != 3) {
+    warn(paste0("slice syntax error"))
+    return(NULL)
+  } 
+
+  # convert slice to Python conventions
+  start <- s[1]-1     # Python: arrays start at 0
+  stop <- s[2]-1      # Python: arrays start at 0
+  step <- s[3] 
+
+  # Python: if (stop - start) is a multiple of step, the 
+  # last value is not included in the slice
+
+  if ((stop-start)/step == round((stop-start)/step))  
+    stop = stop+1
+ 
+  sl <- builtins$slice(as.integer(start), as.integer(stop), as.integer(step))
 }

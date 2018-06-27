@@ -4,11 +4,9 @@
 \alias{getSubmatrix}
 \title{getSubmatrix}
 \usage{
-getSubmatrix(conn, dset, indices)
+getSubmatrix(dset, indices)
 }
 \arguments{
-\item{conn}{Object of type \code{h5pyd_connection} (from \code{initConn})}
-
 \item{dset}{Object of type \code{Dataset}}
 
 \item{indices}{Character vector of slices. Must be in format 'start:stop:step' 
@@ -18,6 +16,6 @@ each integer-valued.  (R-conventions)}
 Fetch data from \code{Dataset} object
 }
 \examples{
-A <- getSubmatrix(conn, D, c('200:300:1', '400:500:1'))
+A <- getSubmatrix(D, c('200:300:1', '400:500:1'))
 
 }

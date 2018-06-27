@@ -4,10 +4,13 @@
 \alias{initConn}
 \title{initConn}
 \usage{
-initConn(domain, endpoint)
+initConn(domain, mode = "r", endpoint)
 }
 \arguments{
 \item{domain}{H5File domain (see documentation)}
+
+\item{mode}{File mode ('r' for read-only, 'r+' for read-write, 'w' for write) 
+Note: 'w' obliterates everything in the file}
 
 \item{endpoint}{endpoint}
 }
@@ -18,6 +21,6 @@ object of type \code{h5pyd_connection}
 Initialize connection to h5pyd server
 }
 \examples{
-conn <- initConn(domain='/home/stvjc/tenx_full.h5', endpoint='http://52.4.181.237:5101') 
+conn <- initConn(domain='/home/stvjc/tenx_full.h5', mode='r', endpoint='http://52.4.181.237:5101') 
 
 }
