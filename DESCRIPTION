@@ -3,7 +3,7 @@ Title: Wrapper for python h5pyd package
 Version: 0.0.1
 Authors@R: person("Samuela", "Pollack", email = "spollack@jimmy.harvard.edu", role = c("aut", "cre"))
 Description: Provide access to remote H5 data server
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.2.0)
 License: None
 Encoding: UTF-8
 LazyData: true
