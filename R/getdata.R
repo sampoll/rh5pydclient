@@ -72,7 +72,23 @@ initConn <- function(domain, mode = 'r', endpoint)  {
   h5py <- import("h5pyd", convert = FALSE)
   np <- import("numpy", convert = FALSE)
   h5file <- h5py$File(domain, mode, endpoint=endpoint)  # TODO: check for not-found
-  return(list(h5py=h5py, np=np, h5file=h5file))
+  return(list(h5file=h5file, mode=mode, status="open"))
+}
+
+#' closeConn
+#'
+#' Close connection to h5pyd server
+#'
+#' @param conn object of type \code{h5pyd_connection}
+#' 
+#' @examples
+#' closeConn(conn) 
+#' 
+#' @importFrom reticulate import 
+#' @export
+closeConn <- function(conn)  {
+  conn$h5file$close()
+  conn$status = "closed"
 }
 
 #' getDataset
@@ -89,6 +105,51 @@ initConn <- function(domain, mode = 'r', endpoint)  {
 getDataset <- function(conn, path)  {
   f <- conn$h5file
   ds <- f[path]
+}
+
+#' createGroup
+#'
+#' Create a new group in a h5pyd \code{File} object
+#'
+#' @param conn Object of type \code{h5pyd_connection} (from \code{initConn})
+#' @param path Full path to the \code{Group} to open 
+#'
+#' @examples
+#' \dontrun{
+#' createGroup(conn, '/newgrp')
+#' }
+#' @export
+createGroup <- function(conn, path)  {
+  if (conn$status != "open")
+    error("File not open")
+  if (conn$mode == "r")
+    error("Unable to create group, file open readonly")
+  conn$h5file$create_group(path)
+}
+
+#' createDataset
+#'
+#' Create a new dataset in a h5pyd \code{File} object
+#'
+#' @param conn Object of type \code{h5pyd_connection} (from \code{initConn})
+#' @param path Full path to the dataset to open 
+#' @param shape List of integer dimensions (explicitly integer, use L or as.integer)
+#' @param type Valid numpy type ('int32', 'int64', 'float32', 'float64')
+#'
+#' @examples
+#' \dontrun{
+#' createDataset(conn, '/newgrp/newdset', list(10L, 10L), 'float32')
+#' }
+#'
+#' @importFrom reticulate tuple
+#' @export
+createDataset <- function(conn, path, shape, dtype='int32')  {
+  if (conn$status != "open")
+    error("File not open")
+  if (conn$mode == "r")
+    error("Unable to create group, file open readonly")
+  t <- tuple(shape)
+  conn$h5file$create_dataset(name=path, shape=t, dtype=dtype)
 }
 
 #' getSubmatrix
@@ -188,3 +249,8 @@ ind2slc <- function(indstr)  {
  
   sl <- builtins$slice(as.integer(start), as.integer(stop), as.integer(step))
 }
+
+
+
+
+
